@@ -1,6 +1,6 @@
 #pragma once
 
-#include "pch.h"
+//#include "pch.h"
 #include "rikudo_shape.h"
 #include <vector>
 #include <map>
@@ -35,6 +35,16 @@ struct rikudo
 	const std::vector< std::pair<int, int>> non_fillable;
 	const std::map<std::pair<int, int>, int> forced_values;
 	const int max_elem_value;
+
+	rikudo() : max_elem_value(0) {};
+	rikudo(const rikudo_shape _shape, const std::map<std::pair<int, int>, int> _forced_orders, const std::vector< std::pair<int, int>> _non_fillable,
+		std::map<std::pair<int, int>, int> _forced_values, int _max_elem_value) : 
+		shape(_shape),
+		forced_orders(_forced_orders), non_fillable(_non_fillable), 
+		forced_values(_forced_values), max_elem_value(_max_elem_value) {
+		check_forced_orders();
+		init();
+	};
 
 	bool init();
 	bool initialize_fillable_blocks();

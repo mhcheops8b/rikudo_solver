@@ -2,6 +2,7 @@
 
 struct rikudo_shape
 {
+	
 	// possibly enum
 	static const int ANY_type = 0;
 	static const int UL_type = 1;
@@ -18,6 +19,12 @@ struct rikudo_shape
 	// at DL or DR part of row
 	std::vector<int> row_connection_down_types;
 
+	rikudo_shape();
+	rikudo_shape(int _rows, const std::vector<int>& _row_sizes, const std::vector<int>& _row_connection_up_types, const std::vector<int>& _row_connection_down_types) : 
+		rows(_rows), 
+		row_sizes(_row_sizes), 
+		row_connection_up_types(_row_connection_up_types), 
+		row_connection_down_types(_row_connection_down_types) {};
 	// 
 	bool check_coords(int row, int col) const;
 	std::pair<int, int> get_UR_tile(int row, int col) const;
@@ -39,4 +46,5 @@ struct rikudo_shape
 	std::pair<int, int> get_tile_in_dir(int row, int col, int direction) const;
 	std::pair<int, int> get_tile_in_dir(const std::pair<int, int>& elem, int direction) const;
 
+	void add_row(int no_elems, int up_conn_type, int down_conn_type);
 };

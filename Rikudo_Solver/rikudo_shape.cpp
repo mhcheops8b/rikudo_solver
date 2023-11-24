@@ -1,7 +1,15 @@
-#include "pch.h"
+//#include "pch.h"
 #include <vector>
 #include <iostream>
 #include "rikudo_shape.h"
+
+rikudo_shape::rikudo_shape()
+{
+	rows = 0;
+	row_sizes.clear();
+	row_connection_up_types.clear();
+	row_connection_down_types.clear();
+}
 
 // tests whether (row, col) is in board
 bool rikudo_shape::check_coords(int row, int col) const
@@ -199,4 +207,12 @@ std::pair<int, int> rikudo_shape::get_tile_in_dir(const std::pair<int, int>& ele
 		std::cerr << "Error: Incorrect direction.\n";
 		return { -1, -1 };
 	}
+}
+
+void rikudo_shape::add_row(int no_elems, int up_conn_type, int down_conn_type)
+{
+	rows++;
+	row_sizes.push_back(no_elems);
+	row_connection_up_types.push_back(up_conn_type);
+	row_connection_down_types.push_back(down_conn_type);
 }

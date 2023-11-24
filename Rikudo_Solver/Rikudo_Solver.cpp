@@ -1,7 +1,7 @@
 // Rikudo_Solver.cpp : This file contains the 'main' function. Program execution begins and ends there.
 //
 
-#include "pch.h"
+//#include "pch.h"
 #include <iostream>
 #include <array>
 #include <vector>
@@ -2798,6 +2798,16 @@ int main()
 		}
 	};
 
+	// programaticaly
+	rikudo_shape small_field_shape_by_add_row;
+	small_field_shape_by_add_row.add_row(4, rikudo_shape::UL_type, rikudo_shape::ANY_type);
+	small_field_shape_by_add_row.add_row(5, rikudo_shape::UL_type, rikudo_shape::DR_type);
+	small_field_shape_by_add_row.add_row(6, rikudo_shape::UL_type, rikudo_shape::DR_type);
+	small_field_shape_by_add_row.add_row(7, rikudo_shape::UR_type, rikudo_shape::DR_type);
+	small_field_shape_by_add_row.add_row(6, rikudo_shape::UR_type, rikudo_shape::DL_type);
+	small_field_shape_by_add_row.add_row(5, rikudo_shape::UR_type, rikudo_shape::DL_type);
+	small_field_shape_by_add_row.add_row(4, rikudo_shape::ANY_type, rikudo_shape::DL_type);
+
 	rikudo my_small_rikudo{
 		small_field_shape,
 		// forced_orders
@@ -3301,24 +3311,24 @@ Block 38=(5,1) cannot be attached, but it can be.
 #endif
 
 #if 0
-	my_small_rikudo.init();
+	//my_small_rikudo.init();
 	solve_rikudo_1(my_small_rikudo);
 #endif
 
 #if 0
-	my_medium_rikudo.init();
+	//my_medium_rikudo.init();
 	solve_rikudo_1(my_medium_rikudo);
 #endif
 
 #if 0
-	my_medium_rikudo2.init();
+	//my_medium_rikudo2.init();
 	solve_rikudo_1(my_medium_rikudo2);
 #endif
 
-//#if 0
-	my_rikudo.init();
+#if 0
+	//my_rikudo.init();
 	solve_rikudo_1(my_rikudo);
-//#endif
+#endif
 
 
 #if 0
