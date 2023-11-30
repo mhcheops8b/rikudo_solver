@@ -27,14 +27,14 @@ struct rikudo
 {
 	enum hex_dirs { ANY = 0, UR = 1, _R = 2, DR = 4, DL = 8, _L = 16, UL = 32 };
 
-	const rikudo_shape shape;
+	/*const*/ rikudo_shape shape;
 
 	// row, rol -> xx 0, UR 1, R 2, DR 4, DL 8, L 16, UL 32
-	const std::map<std::pair<int, int>, int> forced_orders;
+	/*const*/ std::map<std::pair<int, int>, int> forced_orders;
 	// no fill elements non-fillable
-	const std::vector< std::pair<int, int>> non_fillable;
-	const std::map<std::pair<int, int>, int> forced_values;
-	const int max_elem_value;
+	/*const*/ std::vector< std::pair<int, int>> non_fillable;
+	/*const*/ std::map<std::pair<int, int>, int> forced_values;
+	/*const*/ int max_elem_value;
 
 	rikudo() : max_elem_value(0) {};
 	rikudo(const rikudo_shape _shape, const std::map<std::pair<int, int>, int> _forced_orders, const std::vector< std::pair<int, int>> _non_fillable,
