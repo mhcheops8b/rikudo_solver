@@ -3139,9 +3139,101 @@ bool rikudo_parser::load_rikudo_from_file(const std::string& filename, rikudo& l
 	return true;
 }
 
+int main(int argc, char** argv) {
 
-int main()
-{
+
+	std::string filename;
+	enum rikudo_methods { M1 = 1, Mpb };
+	if (argc < 2) {
+		std::cout << "Usage: " << argv[0] << " <filename> [<method> [<method parameters]]\n"
+			<< "<filename> - input file with rikudo\n"
+			<< "<method>:\n"
+			<< "\t - M1 (default) (no parameters)\n"
+			<< "\t - Mpb <start value>\n";
+			return 0;
+	}
+
+	rikudo_methods method;
+	int start_value = 1;
+	if (argc >= 2) {
+		// default method
+		filename = argv[1];
+		method = rikudo_methods::M1;
+	}
+
+	std::cout << "Input file: '" << filename << "'\n";
+
+	if (argc > 2) {
+		// read method
+		if (!strcmp("M1", argv[2])) {
+			method = rikudo_methods::M1;
+		}
+		else if (!strcmp("Mpb", argv[2])) {
+			// Method - prolong blocks
+			method = rikudo_methods::Mpb;
+			if (argc < 4) {
+				std::cout << "[Warning] Missing start value.\n"
+					<< "Using minimal value 1.\n";
+			}
+			else {
+				int v;
+				char* pom = argv[3];
+				if (!rikudo_parser::parse_num(pom, v)) {
+					std::cout << "[Error] Parameter '" << argv[3] << "' must be a number.\n"
+						<< "Using default value 1.\n";
+				}
+				else
+					start_value = v;
+			}
+		}
+		else {
+			std::cout << "[Error]: Unknown method '" << argv[2] << "'.\n";
+			return 0;
+		}
+	}
+	std::cout << "Start value: " << start_value << '\n';
+
+	rikudo loaded_rikudo;
+
+	std::cout << "Parsing input file ... \n";
+	if (rikudo_parser::load_rikudo_from_file(filename, loaded_rikudo)) {
+		switch (method) {
+		case rikudo_methods::M1:
+			solve_rikudo_1(loaded_rikudo);
+		break;
+		case rikudo_methods::Mpb:
+		{
+			if (start_value >= 1 && start_value <= loaded_rikudo.max_elem_value) {
+				// test if value is forced
+				if (loaded_rikudo.forced_values_inv.find(start_value) == loaded_rikudo.forced_values_inv.end())
+				{
+					std::cout << "[Warning]: Start value must start in a forced value tile.\n"
+						<< "Using default value 1.\n";
+					start_value = 1;
+				}
+			}
+			else {
+				std::cout << "[Warning]: Start value must be between 1 and " << loaded_rikudo.max_elem_value << ".\n"				
+					<< "Using default value 1.\n";
+				start_value = 1;
+			}
+
+			prolong_path_with_blocks(loaded_rikudo, { start_value, start_value });
+		}
+		break;
+		}
+	}
+	else {
+		std::cout << "Problem loading rikudo from file: '" << filename << "'.\n";
+	}
+
+
+
+//}
+//
+//
+//int main()
+//{
 	
 
     //std::cout << "Hello World!\n"; 
@@ -4028,6 +4120,7 @@ Block 38=(5,1) cannot be attached, but it can be.
 	rikudo loaded_rikudo(loaded_rikudo_shape, loaded_forced_orders, loaded_nonfillable, loaded_forced_values, loaded_max_elem_value);
 #endif
 
+#if 0
 	std::string filename = "d:\\prog\\rikudo_solver\\medium1.txt";
 	rikudo loaded_rikudo;
 	
@@ -4045,6 +4138,7 @@ Block 38=(5,1) cannot be attached, but it can be.
 	else {
 		std::cout << "Problem loading rikudo from file: '" << filename << "'.\n";
 	}
+#endif
 	
 	return 0;
 }
