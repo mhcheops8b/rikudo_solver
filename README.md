@@ -21,7 +21,7 @@ whole line comments starts with # (optionally preceded with white space characte
 
 `[Forced directions]`
 
---
+`--`
 
 `[Non fillable elements]`
 
