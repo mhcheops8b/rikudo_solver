@@ -2788,13 +2788,20 @@ namespace rikudo_parser {
 
 	void skip_ws(char*& pom);
 	bool parse_num(char*& pom, int& res_value);
-	bool parse_coord(char*& pom, int& c1, int& c2);
+	bool parse_coord(char*& pom, int& c1, int& c2, bool debug = false);
 	bool is_a_comment_line(char* buffer);
+	bool is_an_empty_line(char* buffer);
+	void treat_the_rest_of_the_line(char* buffer, char* pom, bool debug = false);
+	void disp_error_carret(char* buffer, char* pom);
 
-	bool load_rikudo_from_file(const std::string &filename, rikudo& loaded_rikudo);
+	bool load_rikudo_from_file(const std::string& filename, rikudo& loaded_rikudo, bool debug = false);
 };
 
-
+void rikudo_parser::disp_error_carret(char* buffer, char* pom) {
+	for (char* pp = buffer; pp != pom; pp++)
+		std::cout << " ";
+	std::cout << "^\n";
+}
 
 void rikudo_parser::skip_ws(char*& pom) {
 	while (*pom && (*pom == ' ' || *pom == '\n'))
@@ -2803,8 +2810,11 @@ void rikudo_parser::skip_ws(char*& pom) {
 
 bool rikudo_parser::parse_num(char*& pom, int& res_value) {
 	int res = 0;
+	char* start_pom = pom;
 	if (*pom < '0' || *pom > '9') {
 		std::cerr << "Error: Expecting a digit [0-9].\n";
+		std::cerr << start_pom << '\n';
+		disp_error_carret(start_pom, pom);
 		return false;
 	}
 	while (*pom && *pom >= '0' && *pom <= '9') {
@@ -2815,34 +2825,46 @@ bool rikudo_parser::parse_num(char*& pom, int& res_value) {
 	return true;
 }
 
-bool rikudo_parser::parse_coord(char*& pom, int& c1, int& c2) {
+bool rikudo_parser::parse_coord(char*& pom, int& c1, int& c2, bool debug) {
+	char* start_pom = pom;
 	skip_ws(pom);
 	if (*pom != '(') {
 		std::cerr << "Error: Expecting the start of the coordinate '('.\n";
+		std::cout << start_pom << '\n';
+		disp_error_carret(start_pom, pom);
 		return false;
 	}
 	pom++;
 	skip_ws(pom);
 	if (!parse_num(pom, c1)) {
+		std::cout << start_pom << '\n';
+		disp_error_carret(start_pom, pom);
 		return false;
 	}
 	skip_ws(pom);
 	if (*pom != ',') {
 		std::cerr << "Error: Expecting coordinate delimiter ','.\n";
+		std::cout << start_pom << '\n';
+		disp_error_carret(start_pom, pom);
 		return false;
 	}
 	pom++;
 	if (!parse_num(pom, c2)) {
+		std::cout << start_pom << '\n';
+		disp_error_carret(start_pom, pom);
 		return false;
 	}
 	skip_ws(pom);
 	if (*pom != ')') {
 		std::cerr << "Error: Expecting the end of the coordinate ')'.\n";
+		std::cout << start_pom << '\n';
+		disp_error_carret(start_pom, pom);
 		return false;
 	}
 	pom++;
 	skip_ws(pom);
-	std::cout << "DEBUG: Parsed values: (" << c1 << "," << c2 << ")\n";
+	if (debug)
+		std::cout << "DEBUG: Parsed values: (" << c1 << "," << c2 << ")\n";
 	return true;
 }
 
@@ -2856,7 +2878,39 @@ bool rikudo_parser::is_a_comment_line(char* buffer) {
 		return false;
 }
 
-bool rikudo_parser::load_rikudo_from_file(const std::string& filename, rikudo& loaded_rikudo) {
+bool rikudo_parser::is_an_empty_line(char* buffer) {
+	char* pom = buffer;
+	skip_ws(pom);
+	if (!*pom)
+		return true;
+	else
+		return false;
+}
+
+
+void rikudo_parser::treat_the_rest_of_the_line(char *buffer, char* pom, bool debug) {
+	if (!is_an_empty_line(pom)) {
+		if (!is_a_comment_line(pom)) {
+			std::cout << "[Warning] Unknown characters at the rest of the line: "
+				<< '\'' << pom << '\'' << '\n';
+			std::cout << buffer << '\n';
+			disp_error_carret(buffer, pom);
+		}
+		else {
+			if (debug)
+				std::cout << "Skipping commentary at the end of the line.\n"
+					<< '\'' << pom << '\'' << '\n';
+		}
+	}
+	else {
+		if (*pom) {
+			if (debug)
+				std::cout << "Skipping whitespaces at the end of line.\n";
+		}
+	}
+}
+
+bool rikudo_parser::load_rikudo_from_file(const std::string& filename, rikudo& loaded_rikudo, bool debug) {
 	rikudo_shape loaded_rikudo_shape;
 	std::map<std::pair<int, int>, int> loaded_forced_orders;
 	std::vector<std::pair<int, int>> loaded_nonfillable;
@@ -2876,12 +2930,23 @@ bool rikudo_parser::load_rikudo_from_file(const std::string& filename, rikudo& l
 		do {
 			ifs.getline(buffer, buf_size);
 			if (ifs.good()) {
+				if (debug) {
+					std::cout << "Parsing line:\n"
+						<< '\'' << buffer << "'\n";
+				}
 				if (!strcmp(buffer, "--")) {
 					parse_section++;
-					std::cout << "Moving to next section...\n";
+					if (debug)
+						std::cout << "Moving to next section...\n";
+				}
+				else if (rikudo_parser::is_an_empty_line(buffer)) {
+					if (debug)
+						std::cout << "Skipping an empty line ...\n";
+					continue;
 				}
 				else if (rikudo_parser::is_a_comment_line(buffer)) {
-					std::cout << "Skipping a comment line...\n";
+					if (debug)
+						std::cout << "Skipping a comment line...\n";
 					continue;
 				}
 				else {
@@ -2891,26 +2956,32 @@ bool rikudo_parser::load_rikudo_from_file(const std::string& filename, rikudo& l
 						// parse row
 						char* pom = buffer;
 						// skip_ws
-						while (*pom && (*pom == ' ' || *pom == '\t'))
-							pom++;
+						skip_ws(pom);
+						//while (*pom && (*pom == ' ' || *pom == '\t'))
+						//	pom++;
 						// read number
 						int num = 0;
-						if (*pom < '0' || *pom > '9') {
+						if (!parse_num(pom, num)) {
 							std::cerr << "Error: Expecting a digit [0-9].\n";
+							std::cout << buffer << '\n';
+							disp_error_carret(buffer, pom);
 							ifs.close();
 							return false;
 						}
-						while (*pom && *pom >= '0' && *pom <= '9') {
-							num = 10 * num + (*pom - '0');
-							pom++;
+						else {
+							if (debug)
+								std::cout << "[DEBUG]: Parsed value: " << num << '\n';
 						}
 						// skip_ws
-						while (*pom && (*pom == ' ' || *pom == '\t'))
-							pom++;
+						skip_ws(pom);
+						/*while (*pom && (*pom == ' ' || *pom == '\t'))
+							pom++;*/
 						// read up_conn_type L,R,A
 						int up_type;
 						if (*pom != 'L' && *pom != 'R' && *pom != 'A') {
 							std::cerr << "Error: Unknown up connection type, must by 'L', 'R' or 'A'.\n";
+							std::cout << buffer << '\n';
+							disp_error_carret(buffer, pom);
 							ifs.close();
 							return false;
 						}
@@ -2928,6 +2999,8 @@ bool rikudo_parser::load_rikudo_from_file(const std::string& filename, rikudo& l
 						int down_type;
 						if (*pom != 'L' && *pom != 'R' && *pom != 'A') {
 							std::cerr << "Error: Unknown down connection type, must by 'L', 'R' or 'A'.\n";
+							std::cout << buffer << '\n';
+							disp_error_carret(buffer, pom);
 							ifs.close();
 							return false;
 						}
@@ -2938,7 +3011,11 @@ bool rikudo_parser::load_rikudo_from_file(const std::string& filename, rikudo& l
 						else
 							down_type = rikudo_shape::ANY_type;
 						pom++;
-						std::cout << "Parsed values: " << num << ", " << up_type << ", " << down_type << '\n';
+
+						treat_the_rest_of_the_line(buffer, pom);
+			
+						if (debug)
+							std::cout << "Parsed values: " << num << ", " << up_type << ", " << down_type << '\n';
 						loaded_rikudo_shape.add_row(num, up_type, down_type);
 					}
 					break;
@@ -2949,65 +3026,17 @@ bool rikudo_parser::load_rikudo_from_file(const std::string& filename, rikudo& l
 						//skip_ws
 						while (*pom && (*pom == ' ' || *pom == '\t'))
 							pom++;
-						//read coord
-						//(
-						if (*pom != '(') {
-							std::cerr << "Error: Expecting '('.\n";
+						int num1 = 0, num2 = 0;
+						if (!rikudo_parser::parse_coord(pom, num1, num2)) {
+							std::cerr << "Expecting coordinate!\n";
+							std::cout << buffer << '\n';
+							disp_error_carret(buffer, pom);
 							ifs.close();
 							return false;
 						}
-						pom++;
-						//skip_ws
-						while (*pom && (*pom == ' ' || *pom == '\t'))
-							pom++;
-						//read_num
-						int num1 = 0;
-						if (*pom < '0' || *pom > '9') {
-							std::cerr << "Error: Expecting a digit [0-9].\n";
-							ifs.close();
-							return false;
-						}
-						while (*pom && *pom >= '0' && *pom <= '9') {
-							num1 = 10 * num1 + (*pom - '0');
-							pom++;
-						}
-						//skip_ws
-						while (*pom && (*pom == ' ' || *pom == '\t'))
-							pom++;
-						//,
-						if (*pom != ',') {
-							std::cerr << "Error: Expecting coordinate delimiter ','.\n";
-							ifs.close();
-							return false;
-						}
-						pom++;
-						//skip_ws
-						while (*pom && (*pom == ' ' || *pom == '\t'))
-							pom++;
-						// read_num 
-						int num2 = 0;
-						if (*pom < '0' || *pom > '9') {
-							std::cerr << "Error: Expecting a digit [0-9].\n";
-							ifs.close();
-							return false;
-						}
-						while (*pom && *pom >= '0' && *pom <= '9') {
-							num2 = 10 * num2 + (*pom - '0');
-							pom++;
-						}
-						//skip_ws
-						while (*pom && (*pom == ' ' || *pom == '\t'))
-							pom++;
-						//)
-						if (*pom != ')') {
-							std::cerr << "Error: Expecting closing parenthesis ')'.\n";
-							ifs.close();
-							return false;
-						}
-						pom++;
 						// skip_ws
-						while (*pom && (*pom == ' ' || *pom == '\t'))
-							pom++;
+						skip_ws(pom);
+
 						// read dirs
 						int dirs_mask = 0;
 						//while !end
@@ -3043,13 +3072,26 @@ bool rikudo_parser::load_rikudo_from_file(const std::string& filename, rikudo& l
 
 							}
 							else {
-								std::cerr << "Error: Unknow forced direction type. Expecting UR, R, DR, DL, L, UL.\n";
+								if (!dirs_mask) {
+									std::cerr << "Error: Unknown forced direction type. Expecting UR, R, DR, DL, L, UL.\n";
+									//std::cout << '\'' << pom << "'.\n";
+									std::cout << buffer << '\n';
+									disp_error_carret(buffer, pom);
+									ifs.close();
+									return false;
+								}
+								else
+									rikudo_parser::treat_the_rest_of_the_line(buffer, pom);
+								break;
 							}
 							// skip_ws
 							while (*pom && (*pom == ' ' || *pom == '\t'))
 								pom++;
 						}
-						std::cout << "Parsed values: (" << num1 << "," << num2 << ") -> " << dirs_mask << '\n';
+
+						
+						if (debug)
+							std::cout << "Parsed values: (" << num1 << "," << num2 << ") -> " << dirs_mask << '\n';
 						loaded_forced_orders.insert({ std::make_pair(num1, num2), dirs_mask });
 					}
 					break;
@@ -3060,20 +3102,33 @@ bool rikudo_parser::load_rikudo_from_file(const std::string& filename, rikudo& l
 						while (*pom) {
 							if (!rikudo_parser::parse_coord(pom, c1, c2)) {
 								std::cerr << "Expecting coordinate!\n";
+								std::cout << buffer << '\n';
+								disp_error_carret(buffer, pom);
 								ifs.close();
 								return false;
 							}
 							loaded_nonfillable.push_back(std::make_pair(c1, c2));
 							// skip_ws
 							rikudo_parser::skip_ws(pom);
-							if (*pom && *pom != ',') {
-								std::cerr << "Missing delimiter of coordinates ','.\n";
-								ifs.close();
-								return false;
-							}
-							else {
-								if (*pom)
+							if (*pom) {
+								if (*pom == ',')
 									pom++;
+								else {
+									if (!is_a_comment_line(pom)) {
+										std::cerr << "Missing delimiter of coordinates ','.\n";
+										std::cerr << '\'' << pom << "'\n";
+										std::cout << buffer << '\n';
+										disp_error_carret(buffer, pom);
+										ifs.close();
+										return false;
+									}
+									else {
+										if (debug)
+											std::cout << "Skipping commentary ...\n"
+												<< '\'' << pom << "'\n";
+										break;
+									}
+								}
 							}
 						}
 					}
@@ -3084,6 +3139,8 @@ bool rikudo_parser::load_rikudo_from_file(const std::string& filename, rikudo& l
 						int c1, c2, v;
 						if (!rikudo_parser::parse_coord(pom, c1, c2)) {
 							std::cerr << "Expecting coordinate!\n";
+							std::cout << buffer << '\n';
+							disp_error_carret(buffer, pom);
 							ifs.close();
 							return false;
 						}
@@ -3095,6 +3152,8 @@ bool rikudo_parser::load_rikudo_from_file(const std::string& filename, rikudo& l
 						}
 						else {
 							std::cerr << "Expecting assign '=>'!\n";
+							std::cout << buffer << '\n';
+							disp_error_carret(buffer, pom);
 							ifs.close();
 							return false;
 						}
@@ -3103,10 +3162,15 @@ bool rikudo_parser::load_rikudo_from_file(const std::string& filename, rikudo& l
 						// parse_num
 						if (!rikudo_parser::parse_num(pom, v)) {
 							std::cerr << "Expecting number !\n";
+							std::cout << buffer << '\n';
+							disp_error_carret(buffer, pom);
 							ifs.close();
 							return false;
 						}
-						std::cout << "Parsed values: (" << c1 << "," << c2 << ") => " << v << '\n';
+
+						treat_the_rest_of_the_line(buffer, pom);
+						if (debug)
+							std::cout << "Parsed values: (" << c1 << "," << c2 << ") => " << v << '\n';
 						loaded_forced_values.insert({ {c1, c2}, v });
 					}
 					break;
@@ -3116,19 +3180,25 @@ bool rikudo_parser::load_rikudo_from_file(const std::string& filename, rikudo& l
 						int v;
 						if (!rikudo_parser::parse_num(pom, v)) {
 							std::cerr << "Expecting number !\n";
+							std::cout << buffer << '\n';
+							disp_error_carret(buffer, pom);
 							ifs.close();
 							return false;
 						}
-						std::cout << "Parsed value: " << v << '\n';
+
+						treat_the_rest_of_the_line(buffer, pom);
+						if (debug)
+							std::cout << "Parsed value: " << v << '\n';
 						loaded_max_elem_value = v;
 					}
 					break;
 					default:
 						std::cerr << "Unknown section... \n";
-						break;
+						ifs.close();
+						return false;
 					}
 				}
-				std::cout << buffer << '\n';
+				
 			}
 		} while (ifs.good());
 	}
