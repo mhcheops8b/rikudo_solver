@@ -5,8 +5,9 @@ Methods for solving rikudo puzzles.
 Command line: 
   `rikudo_solver[.exe] <filename> [<method> [<method parameters>]]`
 
-<filename> - input file 
-<method> 
+`<filename>` - input file 
+
+`<method>`
   - `M1` (no parameters) [default]
   - `Mpb [<start_value>]` [default start_value = 1]
 
