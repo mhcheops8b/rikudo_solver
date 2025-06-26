@@ -1,7 +1,9 @@
 //#include "pch.h"
 #include <iostream>
 #include <set>
+#include <algorithm>
 #include <vector>
+
 
 #include "rikudo.h"
 

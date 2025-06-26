@@ -9,6 +9,7 @@
 #include <set>
 #include <algorithm>
 #include <fstream>
+#include <cstring>
 
 
 #include "rikudo_shape.h"
