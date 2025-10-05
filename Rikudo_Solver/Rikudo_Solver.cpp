@@ -3298,8 +3298,7 @@ int main(int argc, char** argv) {
 		std::cout << "Problem loading rikudo from file: '" << filename << "'.\n";
 	}
 
-
-
+#if 0
 //}
 //
 //
@@ -3470,6 +3469,7 @@ int main(int argc, char** argv) {
 			60
 	};
 
+
 	// rikudo game - android
 	/* Solution
 	 9  8  33  34  35
@@ -3502,6 +3502,8 @@ int main(int argc, char** argv) {
 			},
 			60
 	};
+
+#endif
 
 #if 0
 	{
@@ -3564,7 +3566,7 @@ int main(int argc, char** argv) {
 #endif
 
 
-
+#if 0
 	my_rikudo.check_forced_orders();
 
 	//auto res_neigh = my_rikudo.get_unfilled_neighbours({ 1, 1 });
@@ -3578,7 +3580,7 @@ int main(int argc, char** argv) {
 	//std::cout << my_rikudo.are_neighbours({ 0,0 }, {2,0}) << '\n';
 	
 	//my_rikudo.init_forced_values_inv();
-
+#endif
 
 #if 0
 	my_rikudo.init();
